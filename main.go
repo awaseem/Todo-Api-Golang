@@ -71,7 +71,7 @@ func editTodo(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content=Type", "application/json")
 	for i, e := range todoList {
 		if editTodo.ID == e.ID {
-			// delete a todo based on the index
+			// edit a todo based on the index
 			todoList[i] = editTodo
 			b, _ := json.Marshal(todoList)
 			w.WriteHeader(http.StatusOK)
