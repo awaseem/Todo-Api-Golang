@@ -35,8 +35,9 @@ func main() {
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
+	// status handler
 	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte("hello world"))
+	w.Write([]byte("OK"))
 }
 
 func listTodo(w http.ResponseWriter, r *http.Request) {
