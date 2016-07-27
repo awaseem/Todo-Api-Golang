@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 )
@@ -24,21 +25,21 @@ var todoList = todos{
 
 func main() {
 	r := mux.NewRouter()
-	r.HandleFunc("/", HomeHandler).Methods("GET")
-	r.HandleFunc("/todo", ListTodos).Methods("GET")
-	r.HandleFunc("/todo", AddTodo).Methods("POST")
+	r.HandleFunc("/", homeHandler).Methods("GET")
+	r.HandleFunc("/todo", listTodo).Methods("GET")
+	r.HandleFunc("/todo", addTodo).Methods("POST")
+	r.HandleFunc("/todo", editTodo).Methods("PUT")
+	r.HandleFunc("/todo", deleteTodo).Methods("DELETE")
 	log.Println("Running Server on port 8080")
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
 
-// HomeHandler provides route handling for the home route
-func HomeHandler(w http.ResponseWriter, r *http.Request) {
+func homeHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte("hello world"))
 }
 
-// ListTodos provides route handling for the list todos route
-func ListTodos(w http.ResponseWriter, r *http.Request) {
+func listTodo(w http.ResponseWriter, r *http.Request) {
 	j, err := json.Marshal(todoList)
 	if err != nil {
 		log.Panic(err)
@@ -49,8 +50,7 @@ func ListTodos(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// AddTodo provides route handling that adds a todo
-func AddTodo(w http.ResponseWriter, r *http.Request) {
+func addTodo(w http.ResponseWriter, r *http.Request) {
 	var newTodo todo
 	body, _ := ioutil.ReadAll(r.Body)
 	json.Unmarshal(body, &newTodo)
@@ -62,4 +62,42 @@ func AddTodo(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content=Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(j)
+}
+
+func editTodo(w http.ResponseWriter, r *http.Request) {
+	var editTodo todo
+	body, _ := ioutil.ReadAll(r.Body)
+	json.Unmarshal(body, &editTodo)
+	w.Header().Set("Content=Type", "application/json")
+	for i, e := range todoList {
+		if editTodo.ID == e.ID {
+			// delete a todo based on the index
+			todoList[i] = editTodo
+			b, _ := json.Marshal(todoList)
+			w.WriteHeader(http.StatusOK)
+			w.Write(b)
+			return
+		}
+	}
+	w.WriteHeader(http.StatusNotFound)
+	w.Write([]byte("{ \"Message\": \"Unable to find todo with that ID:" + strconv.Itoa(editTodo.ID) + "\"}"))
+}
+
+func deleteTodo(w http.ResponseWriter, r *http.Request) {
+	var deleteTodo todo
+	body, _ := ioutil.ReadAll(r.Body)
+	json.Unmarshal(body, &deleteTodo)
+	w.Header().Set("Content=Type", "application/json")
+	for i, e := range todoList {
+		if deleteTodo.ID == e.ID {
+			// delete a todo based on the index
+			todoList = todoList[:i+copy(todoList[i:], todoList[i+1:])]
+			b, _ := json.Marshal(todoList)
+			w.WriteHeader(http.StatusOK)
+			w.Write(b)
+			return
+		}
+	}
+	w.WriteHeader(http.StatusNotFound)
+	w.Write([]byte("{ \"Message\": \"Unable to find todo with that ID: " + strconv.Itoa(deleteTodo.ID) + "\"}"))
 }
